@@ -6,6 +6,8 @@ A Python package implementing TOPSIS (Technique for Order of Preference by Simil
 
 TOPSIS is a multi-criteria decision analysis method. It helps in ranking alternatives based on their distance from the ideal solution. This package provides both a Python library and a command-line interface for performing TOPSIS analysis.
 
+you can try it on - https://topsis-web-service-swbs.onrender.com/
+
 ## Installation
 
 ### From PyPI (after publishing)
