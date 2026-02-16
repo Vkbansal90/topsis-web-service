@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOPSIS Web Service</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TOPSIS Analysis</h1>
+            <p class="subtitle">Technique for Order of Preference by Similarity to Ideal Solution</p>
+        </div>
+
+        <div class="card">
+            <form id="topsisForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="file">
+                        <span class="label-text">Input Data File</span>
+                        <span class="label-hint">CSV file with alternatives and criteria</span>
+                    </label>
+                    <label for="file" class="file-input-wrapper">
+                        <input type="file" id="file" name="file" accept=".csv" required>
+                        <span class="file-name" id="fileName">Choose a CSV file...</span>
+                    </label>
+                    <a href="/sample" download="sample_data.csv" class="sample-link">📥 Download Sample Data File</a>
+                </div>
+
+                <div class="form-group">
+                    <label for="weights">
+                        <span class="label-text">Weights</span>
+                        <span class="label-hint">Comma-separated values (e.g., 1,1,1,1)</span>
+                    </label>
+                    <input type="text" id="weights" name="weights" placeholder="1,1,1,1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="impacts">
+                        <span class="label-text">Impacts</span>
+                        <span class="label-hint">Comma-separated + or - (e.g., +,+,-,+)</span>
+                    </label>
+                    <input type="text" id="impacts" name="impacts" placeholder="+,+,-,+" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">
+                        <span class="label-text">Email Address</span>
+                        <span class="label-hint">Results will be sent to this email</span>
+                    </label>
+                    <input type="email" id="email" name="email" placeholder="your@email.com" required>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span class="btn-text">Calculate TOPSIS</span>
+                    <span class="btn-loader" style="display: none;">Processing...</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="result-container" id="resultContainer" style="display: none;">
+            <div class="result-header">
+                <h2>Results</h2>
+            </div>
+            <div class="result-message" id="resultMessage"></div>
+            <div class="result-table-wrapper" id="resultTableWrapper" style="display: none;">
+                <table id="resultTable">
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>How to Use</h3>
+            <ol>
+                <li>Prepare a CSV file with alternatives in the first column and criteria values in subsequent columns
+                </li>
+                <li>Enter weights for each criterion (comma-separated)</li>
+                <li>Specify impacts: '+' for benefit criteria, '-' for cost criteria</li>
+                <li>Provide your email address to receive the results</li>
+                <li>Click "Calculate TOPSIS" to process</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file');
+        const fileName = document.getElementById('fileName');
+        const form = document.getElementById('topsisForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnLoader = submitBtn.querySelector('.btn-loader');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultMessage = document.getElementById('resultMessage');
+        const resultTableWrapper = document.getElementById('resultTableWrapper');
+        const resultTable = document.getElementById('resultTable');
+
+        // File input handling
+        fileInput.addEventListener('change', function (e) {
+            if (e.target.files.length > 0) {
+                fileName.textContent = e.target.files[0].name;
+                fileName.style.color = '#333';
+            } else {
+                fileName.textContent = 'Choose a CSV file...';
+                fileName.style.color = '#999';
+            }
+        });
+
+        // Form submission
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Show loading state
+            submitBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            resultContainer.style.display = 'none';
+
+            // Prepare form data
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Show results
+                resultContainer.style.display = 'block';
+
+                if (data.success) {
+                    resultMessage.className = 'result-message success';
+                    resultMessage.textContent = data.message;
+
+                    // Display results table if available
+                    if (data.results && data.results.length > 0) {
+                        displayResultsTable(data.results);
+                        resultTableWrapper.style.display = 'block';
+                    }
+                } else {
+                    resultMessage.className = 'result-message error';
+                    resultMessage.textContent = 'Error: ' + data.error;
+                    resultTableWrapper.style.display = 'none';
+                }
+
+                // Scroll to results
+                resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (error) {
+                resultContainer.style.display = 'block';
+                resultMessage.className = 'result-message error';
+                resultMessage.textContent = 'Error: ' + error.message;
+                resultTableWrapper.style.display = 'none';
+            } finally {
+                // Reset button state
+                submitBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+            }
+        });
+
+        function displayResultsTable(results) {
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+
+            // Clear previous results
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            // Create header
+            const headerRow = document.createElement('tr');
+            const keys = Object.keys(results[0]);
+            keys.forEach(key => {
+                const th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+
+            // Create body rows
+            results.forEach(row => {
+                const tr = document.createElement('tr');
+                keys.forEach(key => {
+                    const td = document.createElement('td');
+                    const value = row[key];
+                    // Format numbers to 4 decimal places
+                    if (typeof value === 'number') {
+                        td.textContent = value.toFixed(4);
+                    } else {
+                        td.textContent = value;
+                    }
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+
+</html>

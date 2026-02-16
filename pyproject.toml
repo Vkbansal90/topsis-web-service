@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Topsis-vishesh-102316085"
+version = "1.0.0"
+description = "A Python package for TOPSIS (Technique for Order of Preference by Similarity to Ideal Solution)"
+readme = "README.md"
+authors = [
+    {name = "Vishesh", email = "vishesh@example.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.6"
+dependencies = [
+    "pandas>=1.0.0",
+    "numpy>=1.18.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/topsis"
+Repository = "https://github.com/yourusername/topsis"
+
+[project.scripts]
+topsis = "Topsis_vishesh_102316085.topsis:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["Topsis_vishesh_102316085*"]
